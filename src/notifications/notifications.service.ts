@@ -1,37 +1,48 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class NotificationsService {
-  private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<number>('SMTP_PORT'),
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
-      },
-    });
-  }
+  constructor(private configService: ConfigService) {}
 
   async sendEmail(to: string, subject: string, html: string) {
     try {
-      const info = await this.transporter.sendMail({
-        from: this.configService.get<string>('SMTP_FROM'),
-        to,
-        subject,
-        html,
+      const apiKey = this.configService.get<string>('BREVO_API_KEY');
+      const senderEmail = this.configService.get<string>('SMTP_USER');
+      const senderName = this.configService.get<string>('SMTP_FROM_NAME') || 'TalentFlow LMS';
+
+      if (!apiKey) {
+        throw new Error('BREVO_API_KEY is not defined in environment variables');
+      }
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html,
+        }),
       });
-      this.logger.log(`Email sent: ${info.messageId}`);
-      return info;
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Brevo API error: ${response.status} ${errorData}`);
+      }
+
+      const data = await response.json();
+      this.logger.log(`Email sent via Brevo: ${data.messageId}`);
+      return data;
     } catch (error) {
-      this.logger.error('Error sending email', error.stack);
-      throw error;
+      this.logger.error('Error sending email', error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Failed to send email notification');
     }
   }
 
