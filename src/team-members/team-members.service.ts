@@ -32,6 +32,7 @@ export class TeamMembersService {
 
   async findAll(): Promise<TeamMember[]> {
     return this.teamMemberRepository.find({
+      select: ['id', 'fullName', 'profilePicture', 'track', 'createdAt'],
       order: { createdAt: 'DESC' },
     });
   }

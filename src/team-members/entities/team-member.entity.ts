@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('team_members')
 export class TeamMember {
@@ -14,6 +14,7 @@ export class TeamMember {
   @Column({ length: 100 })
   track: string;
 
+  @Index()
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -33,7 +33,7 @@ import { TeamMembersModule } from './team-members/team-members.module';
         password: configService.get<string>('DB_PASSWORD', 'password'),
         database: configService.get<string>('DB_DATABASE', 'lms_db'),
         autoLoadEntities: true,
-        synchronize: true, // for dev only
+        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
       }),
     }),
     AuthModule,
