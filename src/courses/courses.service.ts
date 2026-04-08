@@ -98,7 +98,8 @@ export class CoursesService {
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto, userId: number, isAdmin: boolean): Promise<Course> {
-    const course = await this.findOne(id);
+    const course = await this.courseRepository.findOne({ where: { id } });
+    if (!course) throw new NotFoundException(`Course with ID ${id} not found`);
     
     if (Number(course.instructorId) !== Number(userId) && !isAdmin) {
       throw new UnauthorizedException('You can only update your own courses');
@@ -109,7 +110,8 @@ export class CoursesService {
   }
 
   async remove(id: string, userId: number, isAdmin: boolean): Promise<void> {
-    const course = await this.findOne(id);
+    const course = await this.courseRepository.findOne({ where: { id } });
+    if (!course) throw new NotFoundException(`Course with ID ${id} not found`);
     
     if (Number(course.instructorId) !== Number(userId) && !isAdmin) {
       throw new UnauthorizedException('You can only delete your own courses');
@@ -121,7 +123,8 @@ export class CoursesService {
   // --- Module Methods ---
 
   async addModule(courseId: string, createModuleDto: CreateModuleDto, userId: number, isAdmin: boolean): Promise<CourseModule> {
-    const course = await this.findOne(courseId);
+    const course = await this.courseRepository.findOne({ where: { id: courseId } });
+    if (!course) throw new NotFoundException('Course not found');
     
     if (Number(course.instructorId) !== Number(userId) && !isAdmin) {
       throw new UnauthorizedException('You can only add modules to your own courses');
