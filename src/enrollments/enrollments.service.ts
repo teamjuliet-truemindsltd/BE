@@ -5,6 +5,7 @@ import { Enrollment } from './entities/enrollment.entity';
 import { LessonProgress } from './entities/lesson-progress.entity';
 import { CoursesService } from '../courses/courses.service';
 import { LessonsService } from '../lessons/lessons.service';
+import { randomUUID } from 'crypto';
 import { Lesson } from '../lessons/entities/lesson.entity';
 
 @Injectable()
@@ -98,6 +99,13 @@ export class EnrollmentsService {
     const percentage = parseFloat(((totalCompleted / totalLessons) * 100).toFixed(2));
     
     enrollment.progressPercentage = percentage;
+
+    if (percentage === 100 && !enrollment.isCompleted) {
+      enrollment.isCompleted = true;
+      enrollment.completedAt = new Date();
+      enrollment.certificateId = randomUUID();
+    }
+
     await this.enrollmentRepository.save(enrollment);
 
     return {

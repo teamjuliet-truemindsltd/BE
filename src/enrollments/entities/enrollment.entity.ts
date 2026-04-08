@@ -24,6 +24,15 @@ export class Enrollment {
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0.00 })
   progressPercentage: number;
 
+  @Column({ type: 'boolean', default: false })
+  isCompleted: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  completedAt: Date | null;
+
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  certificateId: string | null;
+
   @CreateDateColumn()
   enrolledAt: Date;
 }
