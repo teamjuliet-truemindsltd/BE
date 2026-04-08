@@ -5,12 +5,15 @@ import { Lesson } from './entities/lesson.entity';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { CoursesService } from '../courses/courses.service';
+import { LessonProgress } from '../enrollments/entities/lesson-progress.entity';
 
 @Injectable()
 export class LessonsService {
   constructor(
     @InjectRepository(Lesson)
     private lessonRepository: Repository<Lesson>,
+    @InjectRepository(LessonProgress)
+    private lessonProgressRepository: Repository<LessonProgress>,
     private coursesService: CoursesService
   ) {}
 
@@ -31,7 +34,7 @@ export class LessonsService {
     return await this.lessonRepository.save(lesson);
   }
 
-  async findOne(id: string, userId?: number): Promise<Lesson> {
+  async findOne(id: string, userId?: number): Promise<any> {
     const lesson = await this.lessonRepository.findOne({
       where: { id },
       relations: ['module'], // Bring module data if needed
@@ -44,7 +47,16 @@ export class LessonsService {
       throw new UnauthorizedException('Please enroll in the course to view this lesson');
     }
 
-    return lesson;
+    const result = { ...lesson } as any;
+
+    if (userId) {
+      const progress = await this.lessonProgressRepository.findOne({
+        where: { lessonId: id, userId }
+      });
+      result.isCompleted = !!progress?.isCompleted;
+    }
+
+    return result;
   }
 
   async update(id: string, updateLessonDto: UpdateLessonDto, userId: number, isAdmin: boolean): Promise<Lesson> {
