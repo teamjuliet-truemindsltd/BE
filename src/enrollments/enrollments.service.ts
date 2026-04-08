@@ -54,7 +54,7 @@ export class EnrollmentsService {
   }
 
   async markLessonComplete(userId: number, lessonId: string): Promise<any> {
-    const lesson = await this.lessonsService.findOne(lessonId);
+    const lesson = await this.lessonsService.findOne(lessonId, userId);
     if (!lesson.module) {
         throw new NotFoundException('Lesson module not found');
     }
