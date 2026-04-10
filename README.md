@@ -77,6 +77,16 @@ npm run start:prod
 
 ---
 
+## ✅Backend Additions
+
+The following modules were implemented and tested end-to-end:
+
+- **Assignments Module**: assignment creation, submissions (with file upload), grading workflows.
+- **Progress Module**: student progress tracking, instructor class progress view, course analytics.
+- **Collaboration Module**: course forum threads/replies and direct messaging with read-state support.
+
+---
+
 ## 📖 API Documentation
 
 The backend is fully documented and testable out of the box.
@@ -103,6 +113,8 @@ For dedicated API testing, import the collection found in:
 | POST | `/verify-otp` | Verify account via email OTP | No |
 | POST | `/resend-otp` | Resend verification OTP | No |
 | POST | `/login` | Authenticate and receive JWT | No |
+| POST | `/forgot-password` | Request password reset code | No |
+| POST | `/reset-password` | Reset password using OTP code | No |
 | GET | `/me` | Get current user's security profile | Yes |
 
 #### User Management (`/api/v1/users`)
@@ -147,6 +159,35 @@ For dedicated API testing, import the collection found in:
 | POST | `/courses/:id/enroll` | Enroll in a course | Yes | Student |
 | GET | `/users/me/enrollments` | Get my enrolled courses & progress| Yes | Student |
 | POST | `/lessons/:id/complete`| Mark a lesson as completed | Yes | Student |
+
+#### Assignments (`/api/v1/assignments`)
+| Method | Endpoint | Description | Auth Required | Roles |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/` | Create a new assignment | Yes | Instructor |
+| GET | `/course/:courseId` | Get assignments for a course | Yes | Any authenticated user |
+| POST | `/:id/submit` | Submit assignment (supports file upload) | Yes | Student |
+| GET | `/:id/submissions` | Get submissions for an assignment | Yes | Instructor |
+| PATCH | `/submissions/:submissionId/grade` | Grade a submission | Yes | Instructor |
+
+#### Progress Module (`/api/v1/progress`)
+| Method | Endpoint | Description | Auth Required | Roles |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/me` | Get student progress across enrolled courses | Yes | Student |
+| GET | `/me/course/:courseId` | Get detailed progress for one course | Yes | Student |
+| GET | `/course/:courseId/students` | Get student progress list in a course | Yes | Instructor |
+| GET | `/course/:courseId/analytics` | Get aggregate course progress analytics | Yes | Instructor |
+
+#### Collaboration Module (`/api/v1/collaboration`)
+| Method | Endpoint | Description | Auth Required | Roles |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/forum/threads` | Create a forum thread | Yes | Any authenticated user |
+| GET | `/forum/threads/course/:courseId` | Get forum threads by course | Yes | Any authenticated user |
+| GET | `/forum/threads/:threadId` | Get thread details with replies | Yes | Any authenticated user |
+| POST | `/forum/threads/:threadId/replies` | Add reply to a thread | Yes | Any authenticated user |
+| POST | `/messages` | Send direct message | Yes | Any authenticated user |
+| GET | `/messages/inbox` | Get inbox messages | Yes | Any authenticated user |
+| GET | `/messages/conversation/:otherUserId` | Get direct-message conversation | Yes | Any authenticated user |
+| PATCH | `/messages/:messageId/read` | Mark direct message as read | Yes | Any authenticated user |
 
 #### Dashboard & Analytics (`/api/v1/dashboard`)
 | Method | Endpoint | Description | Auth Required | Roles |
@@ -204,7 +245,10 @@ src/
 │   └── ...
 ├── courses/               # Course & Module management
 ├── lessons/               # Lesson content management
+├── assignments/           # Assignment creation, submission, and grading
 ├── enrollments/           # Student enrollment & progress tracking
+├── progress/              # Per-course progress and analytics endpoints
+├── collaboration/         # Forum threads/replies and direct messages
 ├── notifications/         # Email & OTP notification system
 ├── outbox/                # Transactional outbox for guaranteed delivery
 └── dashboard/             # Role-based analytics module
@@ -220,8 +264,10 @@ src/
 The platform includes a robust **One-Time Password (OTP)** verification flow and an asynchronous notification system.
 
 - **Verified Users Only**: New users cannot log in until they verify their email via the `/api/v1/auth/verify-otp` endpoint.
-- **Transactional Outbox Pattern**: To guarantee email delivery, OTP emails are not sent synchronously during the registration request. Instead, they are safely written to the `outbox` database table within the same **database transaction** as the user creation.
-- **Background Worker**: A scheduled background cron job (`@nestjs/schedule`) continuously scans the outbox and delivers pending emails using NodeMailer, complete with automatic retries for failed deliveries.
+- **Secure Password Recovery**: Users can securely reset forgotten passwords using the `/api/v1/auth/forgot-password` and `/api/v1/auth/reset-password` flow.
+- **Context-Aware OTPs**: The system uses a `purpose` flag (e.g., `VERIFY_EMAIL`, `RESET_PASSWORD`) to ensure OTPs are used only for their intended action.
+- **Transactional Outbox Pattern**: To guarantee email delivery, OTP emails are not sent synchronously during the request. Instead, they are safely written to the `outbox` database table within the same **database transaction** as the associated user update.
+- **Background Worker**: A scheduled background cron job (`@nestjs/schedule`) continuously scans the outbox and delivers pending emails (Verification or Password Reset) using NodeMailer, complete with automatic retries for failed deliveries.
 
 ---
 
