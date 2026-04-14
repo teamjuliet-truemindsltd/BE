@@ -146,4 +146,21 @@ export class EnrollmentsService {
       .limit(1)
       .getRawOne();
   }
+
+  async getDailyEnrollmentStats(instructorId?: number, days: number = 30) {
+    const query = this.enrollmentRepository.createQueryBuilder('enrollment')
+      .select("DATE_FORMAT(enrollment.enrolledAt, '%Y-%m-%d')", 'date')
+      .addSelect('COUNT(enrollment.id)', 'count')
+      .where('enrollment.enrolledAt >= DATE_SUB(CURRENT_DATE, INTERVAL :days DAY)', { days });
+
+    if (instructorId) {
+      query.innerJoin('enrollment.course', 'course')
+        .andWhere('course.instructorId = :instructorId', { instructorId });
+    }
+
+    return await query
+      .groupBy('date')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+  }
 }

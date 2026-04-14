@@ -32,12 +32,14 @@ export class DashboardService {
       instructorsCount,
       totalCourses,
       totalEnrollments,
+      enrollmentTrends,
     ] = await Promise.all([
       this.usersService.countAll(),
       this.usersService.countByRole(UserRole.STUDENT),
       this.usersService.countByRole(UserRole.INSTRUCTOR),
       this.coursesService.countAll(),
       this.enrollmentsService.countAll(),
+      this.enrollmentsService.getDailyEnrollmentStats(), // Admin gets global trends
     ]);
 
     return {
@@ -49,6 +51,7 @@ export class DashboardService {
         totalCourses,
         totalEnrollments,
       },
+      enrollmentTrends,
     };
   }
 
@@ -58,11 +61,13 @@ export class DashboardService {
       totalEnrollments,
       uniqueStudentsCount,
       popularCourse,
+      enrollmentTrends,
     ] = await Promise.all([
       this.coursesService.countByInstructor(instructorId),
       this.enrollmentsService.countByInstructor(instructorId),
       this.enrollmentsService.countUniqueStudentsByInstructor(instructorId),
       this.enrollmentsService.getMostPopularCourseByInstructor(instructorId),
+      this.enrollmentsService.getDailyEnrollmentStats(instructorId), // Instructor gets personal trends
     ]);
 
     return {
@@ -73,6 +78,7 @@ export class DashboardService {
         uniqueStudents: uniqueStudentsCount,
         mostPopularCourse: popularCourse?.title || 'N/A',
       },
+      enrollmentTrends,
     };
   }
 
