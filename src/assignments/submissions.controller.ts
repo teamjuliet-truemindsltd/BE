@@ -41,6 +41,14 @@ export class SubmissionsController {
     return this.submissionsService.findByAssignment(assignmentId, user.id, isAdmin);
   }
 
+  @Get('my-submissions/all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all submissions for the current user' })
+  findMyAllSubmissions(@CurrentUser() user: any) {
+    return this.submissionsService.findAllForStudent(user.id);
+  }
+
   @Get('my-submission/:assignmentId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

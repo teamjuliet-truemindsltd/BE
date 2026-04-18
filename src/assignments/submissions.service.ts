@@ -72,6 +72,17 @@ export class SubmissionsService {
       .getMany();
   }
 
+  async findAllForStudent(userId: number): Promise<Submission[]> {
+    return this.submissionRepository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.user', 'user')
+      .leftJoinAndSelect('submission.assignment', 'assignment')
+      .leftJoinAndSelect('assignment.course', 'course')
+      .where('submission.userId = :userId', { userId })
+      .orderBy('submission.createdAt', 'DESC')
+      .getMany();
+  }
+
   async findUserSubmission(assignmentId: string, userId: number): Promise<Submission | null> {
     return this.submissionRepository.findOne({
       where: { assignmentId, userId },
